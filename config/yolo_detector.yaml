@@ -1,0 +1,33 @@
+yolo_detector:
+
+  model_path: "models/yolov8n.pt"
+  device: "cpu" #"cuda:0"
+  fp16: false
+  tracking: false
+  image_size: 640
+  confidence_threshold: 0.25
+  iou_threshold: 0.45
+  allowed_classes:
+    - person
+    - car
+    - truck
+    - bicycle
+    - motorcycle
+    - bus
+    - traffic light
+    - stop sign
+
+
+  roi:
+    enable: false
+    x_min: 0
+    y_min: 0
+    x_max: 640
+    y_max: 480
+
+  performance:
+    batch_size: 1
+    warmup_runs: 3
+
+  logging:
+    level: "INFO"

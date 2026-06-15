@@ -1,0 +1,53 @@
+<launch>
+
+    <env name="DISABLE_ROS1_EOL_WARNINGS" value="1"/>
+    
+    <!-- ROS Bag Player -->
+    
+    <node pkg="rosbag"
+        type="play"
+        name="player"
+        output="screen"
+        args="--clock /home/mahboob-alam/perception_ws/src/datasets/kitti_full_0047.bag" />
+
+    <!-- CONFIG FILE -->
+
+    <arg name="lidar_config"
+         default="$(find perception_pipeline)/config/lidar_filter.yaml"/>
+
+    <arg name="projection_config"
+         default="$(find perception_pipeline)/config/projection.yaml"/>
+
+    <arg name="yolo_config"
+         default="$(find perception_pipeline)/config/yolo_detector.yaml"/>
+
+    <arg name="fusion_config"
+         default="$(find perception_pipeline)/config/fusion.yaml"/>
+
+    <!-- PASS PATHS -->
+
+    <param name="lidar_config_path" value="$(arg lidar_config)"/>
+    <param name="projection_config_path" value="$(arg projection_config)"/>
+    <param name="yolo_config_path" value="$(arg yolo_config)"/>
+    <param name="fusion_config_path" value="$(arg fusion_config)"/>
+
+    <!-- TOPICS -->
+
+    <param name="topics/lidar" value="/kitti/velo/pointcloud"/>
+    <param name="topics/image" value="/kitti/cam2/image_raw"/>
+    <param name="topics/output" value="/fusion/image"/>
+    <param name="topics/objects" value="/fusion/objects"/>
+
+    <!-- NODES -->
+
+    <node pkg="perception_pipeline"
+          type="fusion_node.py"
+          name="fusion_node"
+          output="screen"/>
+
+    <!-- RVIZ -->
+
+    <node pkg="rviz" type="rviz" name="rviz" output="screen" 
+        args="-d $(find perception_pipeline)/config/visualize.rviz" />
+
+</launch>

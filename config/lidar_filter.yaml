@@ -1,0 +1,27 @@
+lidar_filter:
+
+  # ROI (Region of Interest)
+  x_min: 0.0
+  x_max: 100.0
+  y_min: -20.0
+  y_max: 20.0
+  z_min: -1.60
+  z_max: 8.0
+
+  # Radial Filter (distance)
+  min_range: 0.0
+  max_range: 100.0
+
+  remove_nan: true
+  remove_inf: true
+
+  ground_filter: false
+  ground_z: -1.5
+
+  downsample:
+    enable: true
+    method: "voxel"     # "random" or "voxel"
+    percentage: 0.2     # used if random
+    leaf_size: 0.2      # used if voxel
+
+  random_seed: 42

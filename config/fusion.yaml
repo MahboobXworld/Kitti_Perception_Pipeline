@@ -1,0 +1,17 @@
+fusion:
+
+  subscribe:
+    image: "/kitti/cam2/image_raw"
+    lidar: "/kitti/velo/pointcloud"
+
+  sync:
+    queue_size: 10
+    slop: 0.03
+
+  publish:
+    fusion_image: "/fusion/image"
+    objects: "/fusion/objects"
+
+  visualization:
+    enable: true
+    depth_color_map: "HSV"  # Options: HSV, JET, HOT, COOL, OCEAN, VIRIDIS

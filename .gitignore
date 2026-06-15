@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ROS/catkin local build artifacts if generated in-source
+bin/
+lib/
+msg_gen/
+srv_gen/
+msg/*_CMakeLists.txt
