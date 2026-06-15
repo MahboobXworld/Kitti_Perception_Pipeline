@@ -17,3 +17,8 @@ lib/
 msg_gen/
 srv_gen/
 msg/*_CMakeLists.txt
+
+# ROS Bags
+*.bag
+bag_file/
+
