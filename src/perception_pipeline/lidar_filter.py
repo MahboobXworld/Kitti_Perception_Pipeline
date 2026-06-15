@@ -6,10 +6,8 @@ class LidarFilter:
     def __init__(self, config):
         self.cfg = config or {}
 
-    # -----------------------------
-    # Convert PointCloud2 → numpy
-    # -----------------------------
     def cloud_to_numpy(self, cloud_msg):
+        # Read PointCloud2 coordinates into a numpy array
         points = np.array(
             list(pc2.read_points(
                 cloud_msg,
@@ -24,19 +22,15 @@ class LidarFilter:
 
         return points
 
-    # -----------------------------
-    # Remove NaN / Inf
-    # -----------------------------
     def remove_invalid(self, points):
+        # Clean up any NaN/Inf coordinates
         if not (self.cfg.get("remove_nan", True) or self.cfg.get("remove_inf", True)):
             return points
 
         return points[np.isfinite(points).all(axis=1)]
 
-    # -----------------------------
-    # Radial distance filter
-    # -----------------------------
     def radial_filter(self, points):
+        # Keep points within minimum/maximum range limits
         min_r = self.cfg.get("min_range", 0.0)
         max_r = self.cfg.get("max_range", -1.0)
 
@@ -50,10 +44,8 @@ class LidarFilter:
             (dist_sq <= max_r * max_r)
         ]
 
-    # -----------------------------
-    # ROI filter
-    # -----------------------------
     def roi_filter(self, points):
+        # Crop to the 3D bounding box / region of interest
         x_min = self.cfg.get("x_min", -50.0)
         x_max = self.cfg.get("x_max", 50.0)
 
@@ -71,20 +63,16 @@ class LidarFilter:
 
         return points[mask]
 
-    # -----------------------------
-    # Ground filter
-    # -----------------------------
     def ground_filter(self, points):
+        # Filter out points below the road floor threshold
         if not self.cfg.get("ground_filter", False):
             return points
 
         z_thresh = self.cfg.get("ground_z", -1.5)
         return points[points[:, 2] > z_thresh]
 
-    # -----------------------------
-    # Random downsample
-    # -----------------------------
     def random_downsample(self, points):
+        # Downsample points by randomly selecting a subset fraction
         ds_cfg = self.cfg.get("downsample", {})
         percentage = ds_cfg.get("percentage", 1.0)
 
@@ -101,10 +89,8 @@ class LidarFilter:
         idx = np.random.choice(len(points), n, replace=False)
         return points[idx]
 
-    # -----------------------------
-    # Voxel downsample (centroid)
-    # -----------------------------
     def voxel_downsample(self, points):
+        # Downsample by grouping points in 3D voxels and taking their centroids
         ds_cfg = self.cfg.get("downsample", {})
         leaf = ds_cfg.get("leaf_size", 0.2)
 
@@ -125,10 +111,8 @@ class LidarFilter:
 
         return voxel_sum / counts[:, None]
 
-    # -----------------------------
-    # Downsample selector
-    # -----------------------------
     def downsample(self, points):
+        # Choose downsampling method based on config
         ds_cfg = self.cfg.get("downsample", {})
 
         if not ds_cfg.get("enable", False):
@@ -144,10 +128,8 @@ class LidarFilter:
 
         return points
 
-    # -----------------------------
-    # Full pipeline
-    # -----------------------------
     def filter(self, cloud_msg):
+        # Process the point cloud through the filtering stages
         points = self.cloud_to_numpy(cloud_msg)
 
         if len(points) == 0:
