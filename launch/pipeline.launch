@@ -1,6 +1,7 @@
 <launch>
 
     <env name="DISABLE_ROS1_EOL_WARNINGS" value="1"/>
+    <param name="/use_sim_time" value="true"/>
     
     <!-- ROS Bag Player -->
     
@@ -8,7 +9,7 @@
         type="play"
         name="player"
         output="screen"
-        args="--clock /home/mahboob-alam/perception_ws/src/datasets/kitti_full_0047.bag" />
+        args="--clock --loop /home/mahboob-alam/perception_ws/src/datasets/kitti_full_0047.bag" />
 
     <!-- CONFIG FILE -->
 

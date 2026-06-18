@@ -1,5 +1,11 @@
 fusion:
 
+  # Independent switches to enable/disable specific modules
+  modules:
+    enable_2d_bev: true
+    enable_occupancy_net: true
+    enable_3d_detections: true
+
   subscribe:
     image: "/kitti/cam2/image_raw"
     lidar: "/kitti/velo/pointcloud"
@@ -15,3 +21,31 @@ fusion:
   visualization:
     enable: true
     depth_color_map: "HSV"  # Options: HSV, JET, HOT, COOL, OCEAN, VIRIDIS
+
+  bev:
+    enable: true
+    publish_topic: "/fusion/bev_image"
+    resolution: [800, 800]
+    scale: 10.0
+    ego_x: 400
+    ego_y: 600
+    show_window: false
+    trajectory_length: 200
+
+  occupancy_3d:
+    enable: true
+    publish_topic: "/fusion/markers"
+    voxel_size: 0.4
+    min_z: -2.0
+    max_z: 4.0
+    x_range: [-40.0, 40.0]
+    y_range: [-40.0, 40.0]
+    class_colors:
+      car: [0.0, 1.0, 0.0]       # Green
+      truck: [0.0, 0.8, 0.8]     # Cyan/Teal
+      bus: [0.0, 0.8, 0.8]
+      person: [1.0, 0.5, 0.0]    # Orange
+      bicycle: [0.0, 0.5, 1.0]   # Blue
+      motorcycle: [0.0, 0.5, 1.0]
+      bg_voxel: [0.2, 0.2, 0.4, 0.4]  # Blueish gray, semi-transparent (R, G, B, A)
+

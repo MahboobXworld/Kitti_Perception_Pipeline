@@ -13,6 +13,9 @@ A ROS-based, real-time 3D sensor fusion pipeline that combines 2D camera images 
 
 *   **Real-time 2D Object Detection & Tracking:** Utilizes `Ultralytics YOLOv8` (`yolov8n.pt`) with optional `ByteTrack` multi-object tracking.
 *   **LiDAR Cloud Filtering:** Real-time PointCloud2 processing, featuring NaN/Inf cleanup, 3D Region of Interest (ROI) filtering, ground suppression, and downsampling (Voxel Grid & Random).
+*   **3D Voxel Occupancy Network:** Modularized 3D voxel grid construction and object wireframe generation on separate ROS topics.
+*   **Ego Vehicle Marker:** Renders a red bounding box, wireframe outline, and floating label aligned with the `base_link` frame to represent the ego vehicle in 3D BEV.
+*   **Synchronized 2D/3D BEV Top View:** Projects 3D voxel grid centroids and colors directly onto the 2D BEV Top View canvas, ensuring perfect alignment with minimal computation.
 *   **Flexible Camera Projection:** Supports pinhole and fisheye camera models, Plumb Bob distortion correction, homogeneous projection matrices, and camera rectification.
 *   **Z-Buffer Occlusion Filtering:** Discards background points projected onto foreground object pixels, maintaining geometric integrity.
 *   **Vectorized Data Association:** High-performance Numpy-based point-in-bounding-box association to calculate median object depth and physical 3D camera-frame coordinates.
@@ -43,6 +46,7 @@ perception_pipeline/
 └── src/perception_pipeline/    # Reusable Python modules
     ├── __init__.py
     ├── lidar_filter.py         # Point cloud filtering and downsampling
+    ├── occupancy_network.py    # 3D Voxel grid and 3D object bounding boxes generator
     ├── projection_module.py    # Calibration transforms and pixel projections
     └── yolo_detector.py        # YOLOv8 wrapper (preprocess, infer, postprocess)
 ```
@@ -107,6 +111,10 @@ roslaunch perception_pipeline pipeline.launch
 The pipeline is highly configurable through YAML files in the `config/` directory.
 
 ### Fusion (`config/fusion.yaml`)
+*   `modules`: Dynamically enable or disable individual modules:
+    *   `enable_2d_bev`: 2D BEV Top View generation and publisher.
+    *   `enable_occupancy_net`: 3D voxel-grid occupancy network.
+    *   `enable_3d_detections`: 3D class-colored bounding box publisher.
 *   `subscribe`: Input image and lidar topic names.
 *   `sync`: Sensor message synchronization queue size and slop (maximum time difference, e.g. `0.03`s for 30Hz).
 *   `visualization`: Enable/disable depth overlays and select color maps (e.g. `HSV`, `JET`, `VIRIDIS`).
