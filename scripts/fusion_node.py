@@ -9,7 +9,7 @@ import tf
 import tf.transformations
 
 from cv_bridge import CvBridge
-from sensor_msgs.msg import PointCloud2, Image
+from sensor_msgs.msg import PointCloud2, Image, Imu
 from sensor_msgs import point_cloud2 as pc2
 from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker, MarkerArray
@@ -26,6 +26,7 @@ from perception_pipeline.lidar_filter import LidarFilter
 from perception_pipeline.yolo_detector import YoloDetector
 from perception_pipeline.projection_module import ProjectionModule
 from perception_pipeline.occupancy_network import OccupancyNetwork
+from perception_pipeline.odometry_estimator import LidarImuOdometry
 
 
 class SensorFusionNode:
@@ -101,6 +102,21 @@ class SensorFusionNode:
         self.enable_occupancy_net = modules_cfg.get("enable_occupancy_net", True)
         self.enable_3d_detections = modules_cfg.get("enable_3d_detections", True)
 
+        # ----------------------------------------------------
+        # Odometry Estimator setup
+        # ----------------------------------------------------
+        self.odom_estimate_cfg = fusion_cfg.get("odometry", {})
+        self.enable_estimated_odom = self.odom_estimate_cfg.get("enable_estimated", True)
+        
+        if self.enable_estimated_odom:
+            self.odom_estimator = LidarImuOdometry(config)
+            # Publisher for the estimated odometry
+            self.estimated_odom_pub = rospy.Publisher(
+                self.odom_estimate_cfg.get("publish_topic", "/fusion/estimated_odom"),
+                Odometry,
+                queue_size=10
+            )
+
         # Trajectory history in world frame
         self.trajectory = []
         self.latest_odom = None
@@ -116,12 +132,19 @@ class SensorFusionNode:
         # ----------------------------------------------------
         # Publishers & Subscribers
         # ----------------------------------------------------
-        # Odom subscriber to track vehicle position in world frame
-        self.odom_sub = rospy.Subscriber(
-            "/kitti/oxts/odom",
-            Odometry,
-            self.odom_callback
-        )
+        # Odom subscriber to track vehicle position in world frame (only if estimation is disabled)
+        if not self.enable_estimated_odom:
+            self.odom_sub = rospy.Subscriber(
+                "/kitti/oxts/odom",
+                Odometry,
+                self.odom_callback
+            )
+        else:
+            self.imu_sub = rospy.Subscriber(
+                self.odom_estimate_cfg.get("imu_topic", "/kitti/oxts/imu"),
+                Imu,
+                self.imu_callback
+            )
 
         # Message synchronizer for camera & lidar
         self.lidar_sub = Subscriber(lidar_topic, PointCloud2)
@@ -194,6 +217,10 @@ class SensorFusionNode:
         max_len = self.bev_cfg.get("trajectory_length", 200)
         if len(self.trajectory) > max_len:
             self.trajectory.pop(0)
+
+    def imu_callback(self, msg):
+        if self.enable_estimated_odom:
+            self.odom_estimator.process_imu(msg)
 
     def get_class_dimensions(self, class_name):
         if class_name == "car":
@@ -533,11 +560,42 @@ class SensorFusionNode:
             voxel_centroids = None
             voxel_colors = None
 
-            if self.enable_occupancy_net or self.enable_2d_bev or self.enable_3d_detections:
+            if self.enable_occupancy_net or self.enable_2d_bev or self.enable_3d_detections or self.enable_estimated_odom:
                 raw_points = self.lidar_filter.cloud_to_numpy(lidar_msg)
                 raw_points = self.lidar_filter.remove_invalid(raw_points)
             else:
                 raw_points = None
+
+            # ----------------------------------------------------
+            # Estimated Lidar-IMU Odometry
+            # ----------------------------------------------------
+            if self.enable_estimated_odom and raw_points is not None:
+                if self.odom_estimator.T_base_velo is None:
+                    try:
+                        trans, rot = self.tf_listener.lookupTransform("base_link", "velodyne", rospy.Time(0))
+                        self.odom_estimator.set_base_to_velo_transform(trans, rot)
+                    except Exception as e:
+                        pass
+                
+                est_odom = self.odom_estimator.process_lidar(raw_points, lidar_msg.header)
+                self.estimated_odom_pub.publish(est_odom)
+                self.latest_odom = est_odom
+                
+                try:
+                    self.tf_broadcaster.sendTransform(
+                        (est_odom.pose.pose.position.x, est_odom.pose.pose.position.y, est_odom.pose.pose.position.z),
+                        (est_odom.pose.pose.orientation.x, est_odom.pose.pose.orientation.y, est_odom.pose.pose.orientation.z, est_odom.pose.pose.orientation.w),
+                        est_odom.header.stamp,
+                        "base_link",
+                        "world"
+                    )
+                except Exception as e:
+                    rospy.logwarn_throttle(5, f"Estimated TF broadcast failed: {e}")
+
+                self.trajectory.append((est_odom.pose.pose.position.x, est_odom.pose.pose.position.y, est_odom.pose.pose.position.z))
+                max_len = self.bev_cfg.get("trajectory_length", 200)
+                if len(self.trajectory) > max_len:
+                    self.trajectory.pop(0)
 
             if (self.enable_occupancy_net or self.enable_2d_bev) and raw_points is not None:
                 occ_grid = self.occupancy_net.generate_occupancy_grid(raw_points, detected_objects, lidar_msg.header)

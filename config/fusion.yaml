@@ -49,3 +49,11 @@ fusion:
       motorcycle: [0.0, 0.5, 1.0]
       bg_voxel: [0.2, 0.2, 0.4, 0.4]  # Blueish gray, semi-transparent (R, G, B, A)
 
+  odometry:
+    enable_estimated: true  # If true, uses Lidar + IMU; otherwise, uses /kitti/oxts/odom
+    publish_topic: "/fusion/estimated_odom"
+    imu_topic: "/kitti/oxts/imu"
+    icp_voxel_size: 0.5    # Voxel size for ICP downsampling (in meters)
+    icp_max_distance: 1.0  # Max distance for ICP correspondence (in meters)
+    icp_max_iterations: 30
+

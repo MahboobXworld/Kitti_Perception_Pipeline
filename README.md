@@ -16,6 +16,7 @@ A ROS-based, real-time 3D sensor fusion pipeline that combines 2D camera images 
 *   **3D Voxel Occupancy Network:** Modularized 3D voxel grid construction and object wireframe generation on separate ROS topics.
 *   **Ego Vehicle Marker:** Renders a red bounding box, wireframe outline, and floating label aligned with the `base_link` frame to represent the ego vehicle in 3D BEV.
 *   **Synchronized 2D/3D BEV Top View:** Projects 3D voxel grid centroids and colors directly onto the 2D BEV Top View canvas, ensuring perfect alignment with minimal computation.
+*   **Lidar-IMU Odometry Estimator**: Uses a combination of raw IMU integration (motion prediction model) and Open3D ICP Scan Matching to estimate ego vehicle position, trajectory path, and orientation in real-time, removing dependence on pre-computed OXTS ground truth.
 *   **Flexible Camera Projection:** Supports pinhole and fisheye camera models, Plumb Bob distortion correction, homogeneous projection matrices, and camera rectification.
 *   **Z-Buffer Occlusion Filtering:** Discards background points projected onto foreground object pixels, maintaining geometric integrity.
 *   **Vectorized Data Association:** High-performance Numpy-based point-in-bounding-box association to calculate median object depth and physical 3D camera-frame coordinates.
@@ -47,6 +48,7 @@ perception_pipeline/
     ├── __init__.py
     ├── lidar_filter.py         # Point cloud filtering and downsampling
     ├── occupancy_network.py    # 3D Voxel grid and 3D object bounding boxes generator
+    ├── odometry_estimator.py   # Lidar-IMU Odometry and Trajectory Estimator
     ├── projection_module.py    # Calibration transforms and pixel projections
     └── yolo_detector.py        # YOLOv8 wrapper (preprocess, infer, postprocess)
 ```
@@ -67,7 +69,7 @@ Install the required Python packages in your workspace environment:
 pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu118  # For GPU (recommended)
 # Or for CPU-only:
 # pip3 install torch torchvision torchaudio
-pip3 install ultralytics pyyaml numpy opencv-python
+pip3 install ultralytics pyyaml numpy opencv-python open3d scipy
 ```
 
 ### 3. Build the Package
