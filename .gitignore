@@ -1,9 +1,14 @@
+# Datasets and backups
+datasets/
+backup/
+*.zip
+
 # Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.pytest_cache/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.pytest_cache/
 
 # IDEs
 .vscode/
@@ -12,13 +17,12 @@ __pycache__/
 *.swo
 
 # ROS/catkin local build artifacts if generated in-source
-bin/
-lib/
-msg_gen/
-srv_gen/
-msg/*_CMakeLists.txt
+**/bin/
+**/lib/
+**/msg_gen/
+**/srv_gen/
+**/msg/*_CMakeLists.txt
 
 # ROS Bags
-*.bag
-bag_file/
-
+**/*.bag
+**/bag_file/
